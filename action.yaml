@@ -1,0 +1,58 @@
+name: 'GCP Secrets Disabler'
+description: 'Disable old versions of secrets in Google Cloud Secret Manager'
+author: 'mühlemann+popp AG'
+
+inputs:
+  gcp-credentials:
+    description: 'Path to Google Cloud Service Account JSON key'
+    required: true
+  project-id:
+    description: 'Google Cloud Project ID'
+    required: true
+  dry-run:
+    description: 'If true, only show what would be disabled without making changes'
+    required: true
+    default: true
+  save-data:
+    description: 'If true, save requests to external resources as pickled binaries'
+    required: false
+    default: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Clone disabler script project
+      shell: bash
+      run: |
+        git clone git@github.com:muehlemann-popp/gcp-secrets-disabler.git
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ inputs.gcp-credentials }}
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Environment preparation
+      shell: bash
+      run: |
+        pip install poetry
+        cd ./gcp-secrets-disabler
+        echo $PWD
+        poetry install --sync -v --without=dev
+
+    - name: Active secrets check
+      shell: bash
+      env:
+        GCP_PROJECT_ID: ${{ inputs.project-id }}
+        DRY_RUN: "${{ inputs.dry-run }}"
+        SAVE_DATA: "${{ inputs.save-data }}"
+        FILE_MODE: "false"
+      run: |
+        cd ./gcp-secrets-disabler
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        poetry run python ./main.py >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
