@@ -49,7 +49,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Disable old secret versions
-        uses: muehlemann-popp/gcp-secrets-disabler-action@v1
+        uses: muehlemann-popp/gcp-secrets-disabler-action@v1.0.0
         with:
           gcp-credentials: ${{ secrets.GCP_SA_KEY }}
           project-id: 'your-gcp-project-id'
