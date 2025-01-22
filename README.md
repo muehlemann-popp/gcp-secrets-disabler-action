@@ -10,18 +10,27 @@ The action is based on the [GCP Secrets Disabler](https://github.com/muehlemann-
 |-------|-------------|----------|---------|
 | `gcp-credentials` | Path to Google Cloud Service Account JSON key | Yes | - |
 | `project-id` | Google Cloud Project ID | Yes | - |
+| `gcp-region` | Google Cloud Region for operations | Yes | - |
+| `python-version` | Python version to use | No | `3.12` |
 | `dry-run` | If true, only show what would be disabled without making changes | Yes | `true` |
 | `save-data` | If true, save requests to external resources as pickled binaries | No | `false` |
 
-## Environment Variables
+## Internal Environment Variables
 
-The action uses the following environment variables internally:
+The action sets these environment variables internally based on the inputs:
 
 - `GCP_PROJECT_ID`: Set from the `project-id` input
+- `GCP_REGION`: Set from the `gcp-region` input
 - `DRY_RUN`: Set from the `dry-run` input
 - `SAVE_DATA`: Set from the `save-data` input
-- `FILE_MODE`: Always set to "false" in action context
+- `FILE_MODE`: Always set to "false" in action context (this is a debug flag for local development)
 - `GOOGLE_GHA_CREDS_PATH`: Set automatically by google-github-actions/auth
+
+When `save-data` is enabled, the script will save data to the following files:
+- `data_secrets.pkl`: Contains retrieved secrets data
+- `data_secrets_versions.pkl`: Contains retrieved secret versions data
+
+These files are saved in the `var` directory within the script's working directory.
 
 ## Usage Example
 
@@ -44,8 +53,11 @@ jobs:
         with:
           gcp-credentials: ${{ secrets.GCP_SA_KEY }}
           project-id: 'your-gcp-project-id'
+          gcp-region: 'europe-west6'
+          python-version: '3.12'  # Optional, this is the default
           dry-run: true  # Set to false to actually disable old versions
           save-data: false
+
 ```
 
 ## Security Notes
@@ -60,6 +72,10 @@ The service account used needs the following IAM roles or equivalent permissions
 
 - `roles/secretmanager.viewer` - To list secrets and their versions
 - `roles/secretmanager.secretVersionManager` - To disable secret versions
+
+## Python Version
+
+The action uses Python 3.12 by default, which matches the minimum version requirement of the underlying script. While you can specify a different Python version using the `python-version` input, it's recommended to stick with 3.12 unless you have specific requirements.
 
 ## How It Works
 

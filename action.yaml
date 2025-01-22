@@ -9,6 +9,13 @@ inputs:
   project-id:
     description: 'Google Cloud Project ID'
     required: true
+  gcp-region:
+    description: 'Google Cloud Region for operations'
+    required: true
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
   dry-run:
     description: 'If true, only show what would be disabled without making changes'
     required: true
@@ -24,18 +31,18 @@ runs:
     - name: Clone disabler script project
       shell: bash
       run: |
-        git clone git@github.com:muehlemann-popp/gcp-secrets-disabler.git
+        git clone https://github.com/muehlemann-popp/gcp-secrets-disabler.git
 
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ inputs.gcp-credentials }}
 
-    - name: Set up Python 3.13
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
-
+        python-version: ${{ inputs.python-version }}
+        
     - name: Environment preparation
       shell: bash
       run: |
@@ -48,6 +55,7 @@ runs:
       shell: bash
       env:
         GCP_PROJECT_ID: ${{ inputs.project-id }}
+        GCP_REGION: ${{ inputs.gcp-region }}
         DRY_RUN: "${{ inputs.dry-run }}"
         SAVE_DATA: "${{ inputs.save-data }}"
         FILE_MODE: "false"
