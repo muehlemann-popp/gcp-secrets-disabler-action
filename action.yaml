@@ -49,14 +49,14 @@ runs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        workload_identity_provider: ${{ inputs.workload_identity_provider }}
-        service_account: ${{ inputs.service_account }}
+        workload_identity_provider: ${{ inputs.workload-identity-provider }}
+        service_account: ${{ inputs.service-account }}
         credentials_json: ${{ inputs.gcp-credentials }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ inputs.python_version }}
+        python-version: ${{ inputs.python-version }}
 
     - name: Environment preparation
       shell: bash
@@ -69,10 +69,10 @@ runs:
     - name: Active secrets check
       shell: bash
       env:
-        GCP_PROJECT_ID: ${{ inputs.project_id }}
-        GCP_REGION: ${{ inputs.gcp_region }}
-        DRY_RUN: "${{ inputs.dry_run }}"
-        SAVE_DATA: "${{ inputs.save_data }}"
+        GCP_PROJECT_ID: ${{ inputs.project-id }}
+        GCP_REGION: ${{ inputs.gcp-region }}
+        DRY_RUN: "${{ inputs.dry-run }}"
+        SAVE_DATA: "${{ inputs.save-data }}"
         FILE_MODE: "false"
       run: |
         cd ./gcp-secrets-disabler
