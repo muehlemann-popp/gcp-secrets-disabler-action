@@ -51,7 +51,7 @@ runs:
       with:
         workload_identity_provider: ${{ inputs.workload_identity_provider }}
         service_account: ${{ inputs.service_account }}
-        credentials_json: ${{ inputs.gcp_sa_key_json }}
+        credentials_json: ${{ inputs.gcp-credentials }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
