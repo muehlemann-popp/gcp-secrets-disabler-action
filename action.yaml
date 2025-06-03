@@ -1,32 +1,45 @@
-name: 'GCP Secrets Disabler'
-description: 'Disable old versions of secrets in Google Cloud Secret Manager'
-author: 'mühlemann+popp AG'
+name: "GCP Secrets Disabler"
+description: "Disable old versions of secrets in Google Cloud Secret Manager. Supports WIF or Service Account Key."
+author: "mühlemann+popp AG"
 
 inputs:
+  # --- Authentication: Select ONE of TWO methods. ---
+  # Method 1: Workload Identity Federation (WIF)
+  workload-identity-provider:
+    description: "Google Cloud Workload Identity Provider (e.g. projects/YOUR_PROJECT_NUMBER/locations/global/workloadIdentityPools/YOUR_POOL_ID/providers/YOUR_PROVIDER_ID). Required for WIF."
+    required: false
+  service-account:
+    description: "GCP service account email to impersonate via WIF (e.g. your-sa-email@YOUR_PROJECT_ID.iam.gserviceaccount.com). Required for WIF."
+    required: false
+
+  # Method 2: JSON service account key
   gcp-credentials:
-    description: 'Path to Google Cloud Service Account JSON key'
-    required: true
+    description: "Contents of the GCP service account JSON key. Required if WIF is not used."
+    required: false
+
+  # --- General parameters ---
   project-id:
-    description: 'Google Cloud Project ID'
+    description: "Google Cloud Project ID"
     required: true
   gcp-region:
-    description: 'Google Cloud Region for operations'
-    required: true
+    description: "Google Cloud Region (Note: Secret Manager is global, but this can be used for other configurations)"
+    required: false
+    default: "europe-west6"
   python-version:
-    description: 'Python version to use'
+    description: "Python version to use"
     required: false
-    default: '3.12'
+    default: "3.12"
   dry-run:
-    description: 'If true, only show what would be disabled without making changes'
-    required: true
-    default: true
-  save-data:
-    description: 'If true, save requests to external resources as pickled binaries'
+    description: "If true, only changes will be shown without applying them."
     required: false
-    default: false
+    default: "true"
+  save-data:
+    description: "If true, save requests to external resources as pickled binaries"
+    required: false
+    default: "false"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Clone disabler script project
       shell: bash
@@ -36,31 +49,36 @@ runs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ inputs.gcp-credentials }}
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        credentials_json: ${{ inputs.gcp_sa_key_json }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ inputs.python-version }}
-        
+        python-version: ${{ inputs.python_version }}
+
     - name: Environment preparation
       shell: bash
       run: |
         pip install poetry
         cd ./gcp-secrets-disabler
-        echo $PWD
-        poetry install --sync -v --without=dev
+        echo "Current directory for poetry install: $PWD"
+        poetry install --sync --without=dev -v
 
     - name: Active secrets check
       shell: bash
       env:
-        GCP_PROJECT_ID: ${{ inputs.project-id }}
-        GCP_REGION: ${{ inputs.gcp-region }}
-        DRY_RUN: "${{ inputs.dry-run }}"
-        SAVE_DATA: "${{ inputs.save-data }}"
+        GCP_PROJECT_ID: ${{ inputs.project_id }}
+        GCP_REGION: ${{ inputs.gcp_region }}
+        DRY_RUN: "${{ inputs.dry_run }}"
+        SAVE_DATA: "${{ inputs.save_data }}"
         FILE_MODE: "false"
       run: |
         cd ./gcp-secrets-disabler
+        echo 'Running gcp-secrets-disabler script...'
+        echo 'Output:' >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         poetry run python ./main.py >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
+        echo 'Script execution finished.'
